@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISV Messaging Onboarding Guide · Twilio</title>
+  <meta name="description" content="Messaging compliance and onboarding for Twilio ISVs: account setup, sender types, registration, fraud prevention and error lookup." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23f22f46'/%3E%3Ccircle cx='11' cy='11' r='3' fill='%23fff'/%3E%3Ccircle cx='21' cy='11' r='3' fill='%23fff'/%3E%3Ccircle cx='11' cy='21' r='3' fill='%23fff'/%3E%3Ccircle cx='21' cy='21' r='3' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/guide.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-twilio">twilio</span>
+      <span class="brand-product">ISV Messaging Onboarding</span>
+      <span class="brand-tag" id="brand-tag" hidden></span>
+    </div>
+    <div class="topbar-right">
+      <div class="seg seg-sm" id="depth" role="group" aria-label="Level of detail">
+        <button data-depth="overview" class="active">Overview</button>
+        <button data-depth="deep">Deep dive</button>
+      </div>
+      <span class="pill ok" title="Facts and links on this page were checked against Twilio's docs on this date">Verified Oct 30, 2026</span>
+    </div>
+  </header>
+
+  <nav class="chapter-nav" id="chapter-nav" aria-label="Chapters"></nav>
+
+  <main class="stage">
+    <section class="left-pane" id="left" aria-live="polite"></section>
+    <section class="right-pane" id="right"></section>
+  </main>
+
+  <footer class="pager">
+    <button class="btn btn-ghost" id="prev">← Back</button>
+    <span class="pager-hint">Use ← → keys to move between chapters</span>
+    <button class="btn btn-primary" id="next">Next →</button>
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/content.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
