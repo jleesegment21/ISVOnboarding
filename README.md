@@ -22,7 +22,6 @@ Upload the folder as-is to any static host, such as GitHub Pages, Netlify drop, 
 | Personalise for a customer | `…/isv-messaging-onboarding.html?customer=Acme%20Health` shows "Prepared for Acme Health" |
 | Deep-link a chapter | `#start`, `#architecture`, `#senders`, `#compliance/us`, `#compliance/ca`, `#compliance/intl/gb` (any country code), `#fraud`, `#errors/30034`, `#faq` |
 | Navigate | ← → keys, chapter bar, or Back/Next |
-| Overview vs Deep dive | Toggle in the top bar (or press `D`). Overview hides API snippets and edge cases. |
 | Checklist | The fraud checklist saves progress in the viewer's browser |
 | Error lookup | Search all Twilio error codes by number or keyword, with compliance filters. `#errors/<code>` opens one directly. |
 
@@ -43,7 +42,7 @@ Compliance filters (10DLC, Toll-free, Profiles & bundles, and so on) match keywo
 All copy, facts and source links live in [`js/content.js`](js/content.js):
 
 - `SOURCES`: every official link, defined once and referenced by ID.
-- `CHAPTERS`: right-pane copy for each chapter. Sections with `deep: true` appear only in Deep dive.
+- `CHAPTERS`: right-pane copy for each chapter.
 - `SENDERS`, `COMPLIANCE`, `CHECKLIST`, `FAQ`: data for the interactive left pane.
 - `GUIDELINE_COUNTRIES`: country codes that have a Twilio guideline page. The International view only links to Twilio's pages, so there's no compliance data to keep current.
 

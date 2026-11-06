@@ -109,8 +109,6 @@ window.GUIDE = (() => {
             <li><span class="ico">📇</span><span>10DLC<span class="how">Days to ~2 weeks</span></span></li>
             <li><span class="ico">🏁</span><span>Short code<span class="how">US 8–12 weeks · Canada 12–16 weeks</span></span></li>
           </ul>` },
-        { label: 'About this guide', deep: true, html: `
-          <p>Every chapter links to official Twilio docs. <span class="verify">confirm with Twilio</span> marks anything the docs don't settle.</p>` },
       ],
       sources: ['buildAccount', 'senderStrategy', 'block10dlc', 'tfvApi'],
     },
@@ -140,34 +138,6 @@ window.GUIDE = (() => {
             <li>One <b>API key per subaccount</b>. Don't share the Auth Token.</li>
             <li>Suspend, close and move numbers with <b>parent</b> credentials.</li>
           </ul>` },
-        { label: 'Key types', deep: true, html: `
-          <table class="tbl">
-            <tr><th>Key</th><th>Access</th></tr>
-            <tr><td><b>Main</b></td><td>Full access. Console only.</td></tr>
-            <tr><td><b>Standard</b></td><td>All but Accounts and Keys.</td></tr>
-            <tr><td><b>Restricted</b></td><td>Chosen permissions. US region only.</td></tr>
-          </table>
-          <p style="margin-top:8px">Studio and TaskRouter need the subaccount's own credentials.</p>` },
-        { label: 'Gotchas', deep: true, html: `
-          <ul>
-            <li><b>Suspend:</b> stops traffic; numbers still billed.</li>
-            <li><b>Close:</b> permanent. Numbers released.</li>
-            <li><b>Move a number:</b> redo registrations and webhooks.</li>
-            <li><b>Switching to subaccounts later</b> resets opt-out lists. Keep your own.</li>
-            <li><b>Limit:</b> 1,000 subaccounts by default.</li>
-          </ul>` },
-        { label: 'Create a subaccount (Node.js)', deep: true, html: `
-<pre class="code"><span class="k">const</span> sub = <span class="k">await</span> parent.api.v2010.accounts.create({
-  friendlyName: <span class="s">'cust_8842'</span>   <span class="c">// your customer ID</span>
-});
-
-<span class="k">const</span> key = <span class="k">await</span> twilio(sub.sid, sub.authToken)
-  .newKeys.create({ friendlyName: <span class="s">'cust_8842-prod'</span> });</pre>` },
-        { label: 'Organizations vs subaccounts', deep: true, html: `
-          <ul>
-            <li><b>Organization:</b> separate accounts and billing, plus users and SSO.</li>
-            <li><b>Subaccounts:</b> share the parent's balance. Suspend the parent and all stop.</li>
-          </ul>` },
       ],
       sources: ['buildAccount', 'subaccounts', 'apiKeys', 'restrictedKeys', 'secondaryToken', 'orgs', 'sso', 'usageRecords'],
     },
@@ -183,12 +153,6 @@ window.GUIDE = (() => {
           <ul>
             <li>Send through a <b>Messaging Service</b>, one per use case.</li>
             <li><b>Don't add numbers to go faster</b>; carriers filter it. Upgrade the sender type instead.</li>
-          </ul>` },
-        { label: 'Messaging Service details', deep: true, html: `
-          <ul>
-            <li>Sender order: RCS → short code → alphanumeric → long code / toll-free.</li>
-            <li><b>Sticky Sender:</b> same number per recipient.</li>
-            <li>Throughput is per parent account; messages can queue up to 4 hours.</li>
           </ul>` },
       ],
       sources: ['chooseSender', 'senderStrategy', 'intlSms', 'a2p10dlc', 'directStd', 'block10dlc', 'mmsRates', 'atScale', 'msgServices', 'alphaInMs', 'caSms', 'usShortCode', 'caShortCode', 'waTechProvider', 'rcs'],
@@ -210,14 +174,6 @@ window.GUIDE = (() => {
             <tr><td>10DLC Brand + Campaign</td><td>US</td></tr>
           </table>
           <p style="margin-top:8px;font-size:12.5px;color:var(--text-invert-muted)">Needs your approved Primary Customer Profile. See the Embeddable docs for what's available to you.</p>` },
-        { label: 'Embed it (React)', deep: true, html: `
-<pre class="code"><span class="k">import</span> { TwilioComplianceEmbed } <span class="k">from</span> <span class="s">'@twilio/twilio-compliance-embed'</span>;
-
-<span class="c">// inquiryId + token come from your server</span>
-&lt;TwilioComplianceEmbed
-  inquiryId={inquiryId}
-  inquirySessionToken={inquirySessionToken}
-/&gt;</pre>` },
         { label: 'Consent & opt-out', html: `
           <ul>
             <li>Get consent first. Marketing needs <b>written</b> consent. Keep proof.</li>
@@ -225,14 +181,6 @@ window.GUIDE = (() => {
             <li>STOP is handled automatically.</li>
             <li>Twilio's Messaging Policy binds your customers too.</li>
           </ul>` },
-        { label: '10DLC fees (subject to change)', deep: true, html: `
-          <table class="tbl">
-            <tr><td>Brand registration</td><td>$4.50 one-time</td></tr>
-            <tr><td>Standard vetting</td><td>$41.50</td></tr>
-            <tr><td>Vetting appeal</td><td>$11</td></tr>
-            <tr><td>Authentication+</td><td>$12.50</td></tr>
-          </table>
-          <p style="margin-top:8px">Monthly campaign fees vary; see Twilio pricing.</p>` },
       ],
       sources: ['campaignBP', 'isvApi', 'isvSoleProp', 'a2p10dlc', 'brandFees', 'tfvApi', 'tfvConsole', 'tfvPolicy', 'err30474', 'err30527', 'embedLaunch', 'embedTfv', 'embed10dlc', 'trustHubRegs', 'caSms', 'caShortCode', 'regStart', 'regApi', 'regBundle', 'guideSms', 'guideReg', 'alphaReg', 'optOut', 'msgPolicy', 'aup'],
     },
@@ -249,25 +197,6 @@ window.GUIDE = (() => {
             <li><b>SMS geo permissions are Console-only.</b> Subaccounts inherit the parent's.</li>
             <li><b>Usage Triggers alert; they don't stop spend.</b> Suspend from your webhook.</li>
             <li><b>No high-risk voice ranges</b> for trial customers.</li>
-          </ul>` },
-        { label: 'Auto-suspend on spend', deep: true, html: `
-<pre class="code"><span class="c">// $30/day trigger on a customer subaccount</span>
-<span class="k">await</span> parent.api.v2010.accounts(subSid).usage.triggers.create({
-  usageCategory: <span class="s">'totalprice'</span>, triggerBy: <span class="s">'price'</span>,
-  triggerValue: <span class="s">'30'</span>, recurring: <span class="s">'daily'</span>,
-  callbackUrl: <span class="s">'https://isv.example.com/hooks/spend'</span>
-});
-
-<span class="c">// webhook: suspend it</span>
-<span class="k">await</span> parent.api.v2010.accounts(req.body.AccountSid)
-  .update({ status: <span class="s">'suspended'</span> });</pre>` },
-        { label: 'Caller ID trust (voice)', deep: true, html: `
-          <p>Each uses the customer's <b>Secondary Customer Profile</b>.</p>
-          <ul>
-            <li><b>SHAKEN/STIR:</b> verified caller ID.</li>
-            <li><b>Voice Integrity:</b> avoid "Spam Likely".</li>
-            <li><b>CNAM:</b> business name on caller ID.</li>
-            <li><b>Branded Calling:</b> logo and reason on mobile.</li>
           </ul>` },
         { label: 'If attacked', html: `
           <ul class="tasks">
@@ -286,11 +215,6 @@ window.GUIDE = (() => {
       teach: `<p>Search all Twilio error codes. Use the filters for compliance failures.</p>`,
       sections: [
         { label: 'Selected error', id: 'error-detail', html: '' },
-        { label: 'Find errors at scale', deep: true, html: `
-          <ul>
-            <li>Pull each customer's errors with the <b>Monitor Alerts API</b>, per subaccount.</li>
-            <li>Registration failures arrive by webhook or Event Streams, so alert on them.</li>
-          </ul>` },
       ],
       sources: ['errorDict', 'campaignBP', 'a2pTroubleshoot', 'a2pNumberIssues', 'debugging', 'monitorAlerts'],
     },

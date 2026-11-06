@@ -8,7 +8,6 @@
   const state = {
     chapter: 0,
     seen: new Set(JSON.parse(localStorage.getItem('isv.seen') || '[]')),
-    depth: localStorage.getItem('isv.depth') || 'overview',
     arch: 'recommended',
     archNode: 'parent',
     picker: { where: 'us', twoWay: 'yes', volume: 'med' },
@@ -31,7 +30,7 @@
     document.title = `ISV Messaging Onboarding · ${customer}`;
   }
 
-  // ─── Shell: chapter nav, pager, depth toggle, keys, hash ────────────────
+  // ─── Shell: chapter nav, pager, keys, hash ────────────────
   const nav = $('#chapter-nav');
   nav.innerHTML = CHAPTERS.map((c, i) =>
     `<button data-i="${i}"><span class="num">${i + 1}</span><span class="lbl">${c.short}</span></button>`).join('');
@@ -39,24 +38,10 @@
   $('#prev').addEventListener('click', () => go(state.chapter - 1));
   $('#next').addEventListener('click', () => go(state.chapter + 1));
 
-  const depth = $('#depth');
-  depth.addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
-    state.depth = b.dataset.depth;
-    localStorage.setItem('isv.depth', state.depth);
-    applyDepth();
-    toast(state.depth === 'deep' ? 'Deep dive on' : 'Overview');
-  });
-  function applyDepth() {
-    document.body.classList.toggle('overview', state.depth === 'overview');
-    depth.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.depth === state.depth));
-  }
-
   document.addEventListener('keydown', e => {
     if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'ArrowRight') go(state.chapter + 1);
     if (e.key === 'ArrowLeft') go(state.chapter - 1);
-    if (e.key.toLowerCase() === 'd') depth.querySelector(`[data-depth=${state.depth === 'deep' ? 'overview' : 'deep'}]`).click();
   });
   window.addEventListener('hashchange', fromHash);
 
@@ -114,8 +99,8 @@
       </div>
       <div class="rp-teach">${ch.teach}</div>
       ${ch.sections.map(s => `
-        <div class="${s.deep ? 'deep' : ''}" ${s.id ? `id="${s.id}"` : ''}>
-          <div class="rp-section-label">${s.label}${s.deep ? '<span class="deep-tag">deep dive</span>' : ''}</div>
+        <div ${s.id ? `id="${s.id}"` : ''}>
+          <div class="rp-section-label">${s.label}</div>
           <div class="rp-body">${s.html}</div>
         </div>`).join('')}
       <div id="rp-sources">${sourcesBlock(srcIds, ch.sources === 'ALL' ? ` · all ${srcIds.length} sources` : '')}</div>`;
@@ -735,15 +720,5 @@
     if (scroll && window.matchMedia('(max-width: 900px)').matches) el.scrollIntoView({ behavior: 'smooth' });
   }
 
-  let toastTimer;
-  function toast(msg) {
-    const t = $('#toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
-  }
-
-  applyDepth();
   fromHash();
 })();
