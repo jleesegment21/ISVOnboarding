@@ -23,7 +23,7 @@ window.GUIDE = (() => {
     chooseSender:   { t: 'Choose a sender type', u: `${T}/docs/numbers-and-senders/choose-sender-type`, d: 'All sender types compared', k: 'Docs' },
     senderStrategy: { t: 'Sender strategy', u: `${T}/docs/messaging/onboarding/prepare-your-sender-strategy`, d: 'North America options and lead times', k: 'Docs' },
     intlSms:        { t: 'International SMS', u: `${T}/docs/messaging/guides/sending-international-sms-guide`, d: 'Sender types by country', k: 'Docs' },
-    a2p10dlc:       { t: 'A2P 10DLC', u: `${T}/docs/messaging/compliance/a2p-10dlc`, d: 'Brand types and daily caps', k: 'Docs' },
+    a2p10dlc:       { t: 'A2P 10DLC', u: `${T}/docs/messaging/compliance/a2p-10dlc`, d: 'Brand types and throughput', k: 'Docs' },
     directStd:      { t: '10DLC Standard onboarding', u: `${T}/docs/messaging/compliance/a2p-10dlc/direct-standard-onboarding`, d: 'Review times and limits', k: 'Docs' },
     block10dlc:     { t: 'Unregistered 10DLC blocked', u: `${T}/en-us/changelog/-u-s--a2p-10dlc--full-blocking-of-traffic-sent-from-unregistered`, d: 'Since Sept 1, 2023', k: 'Changelog' },
     mmsRates:       { t: '10DLC MMS rate limits', u: `${T}/en-us/changelog/increased-mms-rate-limits-for-a2p-10dlc-phone-numbers-in-the-u-s0`, d: 'MMS speed by Trust Score', k: 'Changelog' },
@@ -79,10 +79,16 @@ window.GUIDE = (() => {
     a2pNumberIssues:{ t: 'A2P number registration issues', u: `${T}/docs/messaging/compliance/a2p-10dlc/troubleshooting-a2p-brands/troubleshooting-a2p-phone-number-registration-issues`, d: 'Numbers stuck unregistered', k: 'Docs' },
     debugging:      { t: 'Debugging your application', u: `${T}/docs/usage/troubleshooting/debugging-your-application`, d: 'Find errors in Console logs', k: 'Docs' },
     monitorAlerts:  { t: 'Monitor Alerts API', u: `${T}/docs/usage/monitor-alert`, d: 'Pull errors per subaccount by API', k: 'Docs' },
+    guideSms:       { t: 'SMS guidelines by country', u: 'https://www.twilio.com/en-us/guidelines/sms', d: 'Sender types and rules per country', k: 'Guidelines' },
+    guideReg:       { t: 'Phone number guidelines by country', u: 'https://www.twilio.com/en-us/guidelines/regulatory', d: 'Bundle requirements per country', k: 'Guidelines' },
     fraudUpdate:    { t: 'Fraud update (July 2025)', u: `${T}/en-us/blog/insights/best-practices/quarterly-fraud-update-july-2025`, d: 'Fraud trends targeting ISVs', k: 'Blog' },
   };
 
   const a = (id, text) => `<a href="${SOURCES[id].u}" target="_blank" rel="noopener">${text}</a>`;
+
+  // Who supplies the privacy policy / T&C link in a 10DLC campaign or toll-free submission.
+  const CONSENT_OWNER = `<b>Privacy policy & terms:</b> use the policy of <b>whoever collects the consumer's opt-in</b>.
+    Customer's own form → customer's policy. Your platform's form → yours.`;
 
   const CHAPTERS = [
     {
@@ -122,6 +128,12 @@ window.GUIDE = (() => {
             <li><b>Bill accurately:</b> usage per customer.</li>
             <li><b>Configure per customer:</b> e.g. geo permissions.</li>
             <li><b>Suspend one</b>, not everyone.</li>
+          </ul>` },
+        { label: 'Profile vs Brand', html: `
+          <ul>
+            <li><b>Secondary Customer Profile:</b> <i>who</i> the business is. Used by every registration.</li>
+            <li><b>A2P Brand:</b> that profile registered with US carriers. 10DLC only.</li>
+            <li><b>Campaign:</b> <i>what</i> they send. One per use case.</li>
           </ul>` },
         { label: 'Credentials', html: `
           <ul>
@@ -186,19 +198,18 @@ window.GUIDE = (() => {
       id: 'compliance', short: 'Compliance', icon: '✅',
       title: 'Registration & compliance',
       concept: 'campaignBP',
-      teach: `<p>Pick a region on the left.</p>
+      teach: `<p>Pick a region. <b>Brand & profile first</b>, then campaigns. Click a step for its docs.</p>
               <p><b>Always register the customer's business, not yours</b> (${a('err30474', '30474')}).</p>`,
       sections: [
+        { label: 'Selected step', id: 'step-detail', html: '' },
         { label: 'Compliance Embeddable', html: `
           <p>A free registration form you embed in your app. Customers fill in their own details.</p>
           <table class="tbl">
-            <tr><th>Covers</th><th>Region</th><th>Status</th></tr>
-            <tr><td>Toll-free verification</td><td>US + CA</td><td><span class="st beta">Beta</span></td></tr>
-            <tr><td>10DLC Brand + Campaign</td><td>US</td><td><span class="st beta">Request access</span></td></tr>
-            <tr><td>Regulatory bundles</td><td>Intl</td><td><span class="st pilot">Pilot</span></td></tr>
-            <tr><td>Branded Calling / SHAKEN / CNAM</td><td>US</td><td><span class="st pilot">Pilot</span></td></tr>
+            <tr><th>Covers</th><th>Region</th></tr>
+            <tr><td>Toll-free verification</td><td>US + CA</td></tr>
+            <tr><td>10DLC Brand + Campaign</td><td>US</td></tr>
           </table>
-          <p style="margin-top:8px;font-size:12.5px;color:var(--text-invert-muted)">Needs an approved Business Profile. Status as of Oct 2026.</p>` },
+          <p style="margin-top:8px;font-size:12.5px;color:var(--text-invert-muted)">Needs your approved Primary Customer Profile. See the Embeddable docs for what's available to you.</p>` },
         { label: 'Embed it (React)', deep: true, html: `
 <pre class="code"><span class="k">import</span> { TwilioComplianceEmbed } <span class="k">from</span> <span class="s">'@twilio/twilio-compliance-embed'</span>;
 
@@ -210,6 +221,7 @@ window.GUIDE = (() => {
         { label: 'Consent & opt-out', html: `
           <ul>
             <li>Get consent first. Marketing needs <b>written</b> consent. Keep proof.</li>
+            <li>${CONSENT_OWNER}</li>
             <li>STOP is handled automatically.</li>
             <li>Twilio's Messaging Policy binds your customers too.</li>
           </ul>` },
@@ -222,7 +234,7 @@ window.GUIDE = (() => {
           </table>
           <p style="margin-top:8px">Monthly campaign fees vary; see Twilio pricing.</p>` },
       ],
-      sources: ['campaignBP', 'isvApi', 'isvSoleProp', 'a2p10dlc', 'brandFees', 'tfvApi', 'tfvConsole', 'tfvPolicy', 'err30474', 'err30527', 'embedLaunch', 'embedTfv', 'embed10dlc', 'trustHubRegs', 'caSms', 'caShortCode', 'regStart', 'regApi', 'regBundle', 'alphaReg', 'optOut', 'msgPolicy', 'aup'],
+      sources: ['campaignBP', 'isvApi', 'isvSoleProp', 'a2p10dlc', 'brandFees', 'tfvApi', 'tfvConsole', 'tfvPolicy', 'err30474', 'err30527', 'embedLaunch', 'embedTfv', 'embed10dlc', 'trustHubRegs', 'caSms', 'caShortCode', 'regStart', 'regApi', 'regBundle', 'guideSms', 'guideReg', 'alphaReg', 'optOut', 'msgPolicy', 'aup'],
     },
 
     {
@@ -250,7 +262,7 @@ window.GUIDE = (() => {
 <span class="k">await</span> parent.api.v2010.accounts(req.body.AccountSid)
   .update({ status: <span class="s">'suspended'</span> });</pre>` },
         { label: 'Caller ID trust (voice)', deep: true, html: `
-          <p>Each uses the customer's <b>Primary Business Profile</b>.</p>
+          <p>Each uses the customer's <b>Secondary Customer Profile</b>.</p>
           <ul>
             <li><b>SHAKEN/STIR:</b> verified caller ID.</li>
             <li><b>Voice Integrity:</b> avoid "Spam Likely".</li>
@@ -301,7 +313,7 @@ window.GUIDE = (() => {
       detail: `<p><b>Best for:</b> two-way local texting.</p>
         <ul>
           <li>Register a Brand + Campaign. Unregistered = <b>blocked and billed</b> (${a('err30034', '30034')}).</li>
-          <li>Brand types: Sole Proprietor (~1,000/day), Low-Volume (2,000/day), Standard (2,000+).</li>
+          <li>Brand types: Sole Proprietor, Low-Volume, Standard. Speed depends on type and Trust Score.</li>
         </ul>`, src: ['campaignBP', 'a2p10dlc', 'directStd', 'block10dlc'] },
     { id: 'tollFree', icon: '⚡', name: 'Toll-free', regions: ['us', 'ca'],
       reg: 'Verification', time: '≤ 3 business days', mps: '3 MPS, can raise',
@@ -361,42 +373,63 @@ window.GUIDE = (() => {
         </ul>`, src: ['rcs'] },
   ];
 
+  // Steps: `once` = done once by the ISV; otherwise per customer. `d` + `docs` show when a step is clicked.
   const COMPLIANCE = {
     us: {
       label: '🇺🇸 US',
+      brand: { title: 'Brand & profile', guide: 'isvApi', steps: [
+        { once: true, t: 'ISV Primary Customer Profile', s: 'Your business, on the parent account.',
+          d: 'Create it once in the Console as <b>"ISV Reseller or Partner"</b>.', docs: ['isvApi', 'trustHubRegs'] },
+        { t: 'Share it to the subaccount', s: 'Required before creating an A2P campaign.',
+          d: "Share your Primary Customer Profile with each customer's subaccount. The campaign can't be created until it's shared.", docs: ['isvApi'] },
+        { t: 'Secondary Customer Profile', s: "Customer's business, in their subaccount.",
+          d: "The customer's legal name, address, tax ID and authorized contact. Brand and toll-free verification both use it.", docs: ['isvApi', 'trustHubRegs'] },
+        { t: 'A2P Brand', s: 'Your customer, not you.',
+          d: 'Register the brand in the customer\'s name. No Tax ID? Use Sole Proprietor.', docs: ['brandFees', 'a2p10dlc', 'isvSoleProp'] },
+      ]},
+      table: { head: ['Brand type', 'For', 'Speed (MPS)'], rows: [
+        ['Sole Proprietor', 'No Tax ID', 'Low'],
+        ['Low-Volume', 'Small senders', 'Low'],
+        ['Standard', 'Most businesses', 'By Trust Score'],
+      ]},
       tracks: [
-        { title: '10DLC (local numbers)', guide: 'campaignBP', steps: [
-          { t: 'Primary Business Profile', s: "Customer's own, in their subaccount." },
-          { t: 'Brand', s: 'Your customer, not you.' },
-          { t: 'Campaign', s: 'One per use case.' },
-          { t: 'Add numbers → send', s: '' },
+        { title: '10DLC campaign', guide: 'campaignBP', steps: [
+          { t: 'Campaign', s: 'One per use case.',
+            d: `Describe the use case, opt-in flow and sample messages.<br>${CONSENT_OWNER}`, docs: ['campaignBP', 'directStd', 'isvApi'] },
+          { t: 'Add numbers → send', s: 'Numbers go in the linked Messaging Service.',
+            d: 'Unregistered numbers are blocked (30034).', docs: ['a2pNumberIssues', 'msgServices', 'err30034'] },
         ]},
         { title: 'Toll-free verification', steps: [
-          { t: 'Primary Business Profile', s: 'Same profile as above.' },
-          { t: 'Verify each number', s: "Customer's business registration number." },
-          { t: 'Approved → send', s: 'Up to 3 business days.' },
+          { t: 'Verify each number', s: 'Uses the Secondary Customer Profile.',
+            d: `Submit the customer's business registration number, use case, sample message and opt-in proof.<br>${CONSENT_OWNER}`, docs: ['tfvApi', 'tfvConsole', 'tfvPolicy', 'err30474'] },
+          { t: 'Approved → send', s: 'Up to 3 business days.',
+            d: 'Unverified numbers are blocked (30032).', docs: ['tfvApi', 'err30032'] },
         ]},
       ],
-      table: { head: ['Brand type', 'For', 'Daily cap'], rows: [
-        ['Sole Proprietor', 'No Tax ID', '~1,000'],
-        ['Low-Volume', 'Small senders', '2,000'],
-        ['Standard', 'Most businesses', '2,000+'],
-      ]},
       note: { kind: 'warn', html: 'Public companies also need email verification (Authentication+).' },
     },
     ca: {
       label: '🇨🇦 Canada',
+      brand: { title: 'Brand & profile', steps: [
+        { once: true, t: 'ISV Primary Customer Profile', s: 'Your business, on the parent account.',
+          d: 'Same ISV profile as the US.', docs: ['trustHubRegs'] },
+        { t: 'Secondary Customer Profile', s: "Customer's business, in their subaccount.",
+          d: 'Use the Canadian business number (CBN, NEQ or provincial).', docs: ['tfvApi', 'trustHubRegs'] },
+      ]},
+      table: null,
       tracks: [
         { title: 'Toll-free (recommended)', steps: [
-          { t: 'Primary Business Profile', s: "Customer's own, in their subaccount." },
-          { t: 'Verify each number', s: 'Same as the US, with a Canadian business number.' },
-          { t: 'Approved → send', s: 'Covers US and Canada.' },
+          { t: 'Verify each number', s: 'Same process as the US.',
+            d: `Submit the customer's details and Canadian business number.<br>${CONSENT_OWNER}`, docs: ['tfvApi', 'tfvPolicy', 'err30527'] },
+          { t: 'Approved → send', s: 'Covers US and Canada.',
+            d: 'One verification works in both countries.', docs: ['tfvApi', 'caSms'] },
         ]},
         { title: 'Short code (high volume)', steps: [
-          { t: 'Apply for CWTA approval', s: '12–16 weeks.' },
+          { t: 'Apply for CWTA approval', s: '12–16 weeks.',
+            d: 'Express consent and HELP/STOP are required.', docs: ['caShortCode'] },
         ]},
       ],
-      table: { head: ['Sender', 'Registration', 'Business texts?'], rows: [
+      senders: { head: ['Sender', 'Registration', 'Business texts?'], rows: [
         ['Toll-free', 'Verification', '✅ Yes'],
         ['Short code', 'CWTA', '✅ Yes'],
         ['Long code', 'None', '⚠️ Filtered'],
@@ -406,19 +439,49 @@ window.GUIDE = (() => {
     },
     intl: {
       label: '🌍 International',
+      brand: null,
+      table: null,
       tracks: [
         { title: 'Buying numbers', steps: [
-          { t: 'Check requirements', s: 'Vary by country and number type.' },
-          { t: 'Create a regulatory bundle', s: "Customer's ID, address and documents." },
-          { t: 'Approved → buy number', s: 'Up to 3 business days.' },
+          { t: 'Check the phone number guideline', s: 'Pick a country above.',
+            d: 'It lists the bundle requirements for each number type.', docs: ['guideReg', 'regStart'] },
+          { t: 'Create a regulatory bundle', s: "Customer's ID, address and documents.",
+            d: 'Create it in the customer\'s subaccount, via Console or API.', docs: ['regBundle', 'regApi'] },
+          { t: 'Approved → buy number', s: 'Up to 3 business days.',
+            d: 'Assign the approved bundle when buying the number.', docs: ['regStart'] },
         ]},
         { title: 'Alphanumeric IDs', steps: [
-          { t: 'Pre-register if required', s: 'Some countries; up to ~16 days.' },
+          { t: 'Pre-register if required', s: 'Check the SMS guideline.',
+            d: 'Some countries need pre-registration (up to ~16 days).', docs: ['guideSms', 'alphaReg'] },
         ]},
       ],
-      table: null,
-      note: { kind: 'good', html: 'Embeddable for bundles is in pilot. Use the Regulatory Compliance API for now.' },
+      note: { kind: 'good', html: 'Create bundles in Console or with the Regulatory Compliance API.' },
     },
+  };
+
+  // Countries with a Twilio guideline page (ISO codes). Names come from the browser.
+  // Only links are shown, so this list rarely needs updating.
+  const GUIDELINE_COUNTRIES = {
+    sms: 'ad ae af ag ai al am an ao ar as at au aw az ba bb bd be bf bg bh bi bj bm bn bo br bs bt bw by bz ca cd cf cg ch ci ck cl cm cn co cr cu cv cy cz de dj dk dm do dz ec ee eg er es et fi fj fm fo fr ga gb gd ge gf gg gh gi gl gm gn gp gq gr gt gu gw gy hk hn hr ht hu id ie il in iq ir is it je jm jo jp ke kg kh km kn kr kw ky kz la lb lc li lk lr ls lt lu lv ly ma mc md me mg mh mk ml mm mn mo mq mr ms mt mu mv mw mx my mz na nc ne nf ng ni nl no np nu nz om pa pe pf pg ph pk pl pm pr ps pt pw py qa re ro rs ru rw sa sb sc sd se sg si sk sl sm sn so sr ss st sv sy sz tc td tg th tj tl tm tn to tr tt tv tw tz ua ug us uy uz vc ve vg vi vn vu ws xk ye za zm zw'.split(' '),
+    reg: 'ae ar at au ba bb bd be bg bh bj bo br bz ch cl co cr cy cz de dk do dz ec ee eg es fi fr gb gd gh gr gt hk hn hr hu id ie in is it jm jo jp ke kr lk lt lu lv md mg ml mo mu mx my na ng ni nl no nz pa ph pl pt py qa ro sa se sg si sk sv th tn tr tw ug uy ve vn za'.split(' '),
+  };
+
+  // How to read Twilio's guideline pages: the section to find, and what it tells you.
+  const GUIDE_TIPS = {
+    sms: [
+      ['Two-way SMS supported', 'Can recipients reply?'],
+      ['Phone Numbers & Sender ID', 'Which senders work: alphanumeric, long code, short code.'],
+      ['Pre-registration', 'Must the sender be registered first? Note the provisioning time.'],
+      ['Sender ID preserved', 'Will recipients see your sender, or a replacement?'],
+      ['Compliance considerations', 'Opt-in rules, banned content, quiet hours.'],
+    ],
+    reg: [
+      ['Number type', 'Find the section for what you\'ll buy: local, mobile, national, toll-free.'],
+      ['Individuals vs Businesses', "Pick your customer's end-user type."],
+      ['Information required', 'Fields to fill in the bundle.'],
+      ['Documentation required', 'Proof to upload: ID, address, business registration.'],
+      ['Address', 'In-country, in the number\'s region, or anywhere.'],
+    ],
   };
 
   const CHECKLIST = [
@@ -440,7 +503,7 @@ window.GUIDE = (() => {
     { q: 'Which number type first?', a: '<p>US: toll-free for alerts, 10DLC for conversations. Canada: toll-free. Short code for high volume.</p>', go: 'senders' },
     { q: 'How long until we can send?', a: '<p>Toll-free ≤ 3 days · 10DLC days–2 weeks · Short code 8–16 weeks.</p>', go: 'senders' },
     { q: 'Does Canada need 10DLC?', a: '<p>No, but long codes are filtered. Use toll-free.</p>', go: 'compliance' },
-    { q: 'Does the Embeddable cover Canada and international?', a: '<p>Canada: yes, for toll-free. International: pilot only.</p>', go: 'compliance' },
+    { q: 'Does the Embeddable cover Canada and international?', a: '<p>Canada: yes, for toll-free verification. For other regions, check the Embeddable docs.</p>', go: 'compliance' },
     { q: 'What if a customer sends spam?', a: "<p>Only their subaccount is affected, if isolated. Otherwise your whole account is at risk.</p>", go: 'fraud' },
     { q: 'Geo permissions by API?', a: '<p>Voice: yes. SMS: Console only.</p>', go: 'fraud' },
     { q: 'Can we move numbers between subaccounts?', a: '<p>Yes, but registrations and webhooks must be redone.</p>', go: 'architecture' },
@@ -461,5 +524,5 @@ window.GUIDE = (() => {
   ];
   const ERROR_TOP = [30034, 30032, 30474, 30527, 30007, 21610, 21408, 30450, 21649];
 
-  return { SOURCES, CHAPTERS, SENDERS, COMPLIANCE, CHECKLIST, FAQ, ERROR_FILTERS, ERROR_TOP };
+  return { SOURCES, CHAPTERS, SENDERS, COMPLIANCE, GUIDELINE_COUNTRIES, GUIDE_TIPS, CHECKLIST, FAQ, ERROR_FILTERS, ERROR_TOP };
 })();

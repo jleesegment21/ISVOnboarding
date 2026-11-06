@@ -1,5 +1,5 @@
 (() => {
-  const { SOURCES, CHAPTERS, SENDERS, COMPLIANCE, CHECKLIST, FAQ, ERROR_FILTERS, ERROR_TOP } = window.GUIDE;
+  const { SOURCES, CHAPTERS, SENDERS, COMPLIANCE, GUIDELINE_COUNTRIES, GUIDE_TIPS, CHECKLIST, FAQ, ERROR_FILTERS, ERROR_TOP } = window.GUIDE;
   const $ = (sel, root = document) => root.querySelector(sel);
   const left = $('#left');
   const right = $('#right');
@@ -14,6 +14,8 @@
     picker: { where: 'us', twoWay: 'yes', volume: 'med' },
     sender: null,
     region: 'us',
+    step: null,        // selected compliance step: { region, track, i }
+    country: 'gb',
     errQuery: '',
     errFilter: 'compliance',
     errCode: ERROR_TOP[0],
@@ -59,9 +61,10 @@
   window.addEventListener('hashchange', fromHash);
 
   function fromHash() {
-    const [id, sub] = location.hash.slice(1).split('/');
+    const [id, sub, sub2] = location.hash.slice(1).split('/');
     const i = CHAPTERS.findIndex(c => c.id === id);
     if (id === 'compliance' && COMPLIANCE[sub]) state.region = sub;
+    if (id === 'compliance' && /^[a-z]{2}$/.test(sub2 || '')) state.country = sub2;
     if (id === 'errors' && /^\d+$/.test(sub || '')) state.errCode = +sub;
     render(i >= 0 ? i : 0);
   }
@@ -73,7 +76,7 @@
   }
 
   function subPath(id) {
-    if (id === 'compliance') return '/' + state.region;
+    if (id === 'compliance') return '/' + state.region + (state.region === 'intl' ? '/' + state.country : '');
     if (id === 'errors') return '/' + state.errCode;
     return '';
   }
@@ -115,10 +118,14 @@
           <div class="rp-section-label">${s.label}${s.deep ? '<span class="deep-tag">deep dive</span>' : ''}</div>
           <div class="rp-body">${s.html}</div>
         </div>`).join('')}
-      <div class="rp-section-label">📎 Official documentation${ch.sources === 'ALL' ? ` · all ${srcIds.length} sources` : ''}</div>
-      ${sourceList(srcIds)}`;
+      <div id="rp-sources">${sourcesBlock(srcIds, ch.sources === 'ALL' ? ` · all ${srcIds.length} sources` : '')}</div>`;
     if (ch.id === 'senders') renderSenderDetail();
+    if (ch.id === 'compliance') renderStepDetail();
     if (ch.id === 'errors') renderErrorDetail();
+  }
+
+  function sourcesBlock(ids, suffix = '') {
+    return `<div class="rp-section-label">📎 Official documentation${suffix}</div>${sourceList(ids)}`;
   }
 
   function sourceList(ids) {
@@ -182,16 +189,17 @@
 
     architecture() {
       const NODES = {
-        parent: ['🏢 ISV parent account', 'Admin and billing only. <b>Sends nothing.</b>'],
+        parent: ['🏢 ISV parent account', 'Holds your <b>ISV Primary Customer Profile</b>. Admin and billing only. <b>Sends nothing.</b>'],
         env: ['🧪 Dev & Staging subaccounts', 'Keep testing separate from production.'],
         cust: ['👤 Customer subaccount', "Created at signup via API. Holds <b>everything</b> the customer needs to send."],
-        profile: ['🪪 Primary Business Profile', "The <b>customer's own</b> profile, in their subaccount. All registrations build on it."],
-        brand: ['📇 A2P Brand + Campaigns', "In the customer's name. One campaign per use case."],
+        shared: ['🔗 Shared ISV Primary Profile', "Your Primary Customer Profile, shared from the parent. <b>Required before creating an A2P campaign.</b>"],
+        profile: ['🪪 Secondary Customer Profile', "<b>Who the business is</b>: legal name, tax ID, address, contact. Created once per customer in Trust Hub, then reused by the A2P Brand, toll-free verification and caller ID."],
+        brand: ['📇 A2P Brand + Campaigns', "<b>US 10DLC only.</b> The Brand registers the customer's profile with carriers. Each Campaign describes <b>what</b> they send. One per use case."],
         ms: ['📨 Messaging Service per use case', 'One per use case, e.g. reminders vs marketing.'],
         nums: ['📱 Numbers', "Bought inside the customer's subaccount."],
         key: ['🔑 API key', 'One per customer. Revoke without affecting others.'],
         trigger: ['⏰ Usage trigger', "Daily spend alert. Your webhook suspends the subaccount."],
-        shared: ['⚠️ Everything in one account', "Shared numbers, opt-outs and reputation. One bad sender risks <b>everyone</b>."],
+        oneAccount: ['⚠️ Everything in one account', "Shared numbers, opt-outs and reputation. One bad sender risks <b>everyone</b>."],
       };
       const custCol = (name) => `
         <div class="col">
@@ -199,8 +207,9 @@
             <div class="n-title">👤 ${name}</div>
             <div class="n-sub">Subaccount</div>
             <div class="chip-list">
-              <span class="chip" data-n="profile">🪪 Primary Profile</span>
-              <span class="chip" data-n="brand">📇 Brand + Campaigns</span>
+              <span class="chip" data-n="shared">🔗 Shared ISV Primary</span>
+              <span class="chip" data-n="profile">🪪 Secondary Customer Profile</span>
+              <span class="chip" data-n="brand">📇 A2P Brand + Campaigns</span>
               <span class="chip" data-n="ms">📨 Messaging Services</span>
               <span class="chip" data-n="nums">📱 Numbers</span>
               <span class="chip" data-n="key">🔑 API key</span>
@@ -212,7 +221,7 @@
         <div class="arch">
           <button class="node parent" data-n="parent">
             <div class="n-title">🏢 ISV parent account</div>
-            <div class="n-sub">Admin · billing · default geo permissions · <b>no traffic</b></div>
+            <div class="n-sub">ISV Primary Customer Profile · billing · geo defaults · <b>no traffic</b></div>
           </button>
           <div class="connector"></div>
           <div class="bus"></div>
@@ -226,7 +235,7 @@
         </div>
         <div class="legend"><span class="l-parent">Parent (one)</span><span class="l-cust">Per end customer</span><span class="l-env">Test environments</span><span class="l-note">Up to 1,000 subaccounts by default</span></div>` : `
         <div class="arch">
-          <button class="node bad" data-n="shared" style="max-width:520px">
+          <button class="node bad" data-n="oneAccount" style="max-width:520px">
             <div class="n-title">🏢 One account for everyone</div>
             <div class="n-sub">Customers A, B and C all send from here</div>
             <div class="chip-list">
@@ -255,13 +264,13 @@
       $('#arch-seg', left).addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
         state.arch = b.dataset.a;
-        state.archNode = state.arch === 'shared' ? 'shared' : 'parent';
+        state.archNode = state.arch === 'shared' ? 'oneAccount' : 'parent';
         LEFT.architecture();
       });
       const showNode = (n) => {
         state.archNode = n;
         const [t, d] = NODES[n];
-        $('#node-detail', left).innerHTML = `<h3>${t}</h3><div style="font-size:13.5px;color:#334155">${d}</div><div class="hint" style="font-size:12px;color:var(--text-muted);margin-top:8px">Click any box to learn more.</div>`;
+        $('#node-detail', left).innerHTML = `<h3>${t}</h3><div style="font-size:13.5px;color:#334155">${d}</div>`;
         left.querySelectorAll('[data-n]').forEach(el => el.classList.toggle('sel', el.dataset.n === n));
       };
       left.querySelectorAll('[data-n]').forEach(el => el.addEventListener('click', e => { e.stopPropagation(); showNode(el.dataset.n); }));
@@ -289,15 +298,16 @@
               <div class="rec-why">${rec.why}</div>
               ${rec.alt ? `<div class="rec-alt">Also consider: <b>${rec.alt.map(a => byId(a).name).join(', ')}</b></div>` : ''}
             </div>
+            <button class="btn btn-ghost rec-more" data-s="${rec.primary}">Details</button>
           </div>
         </div>
         <div class="senders">
           ${SENDERS.map(s => {
             const relevant = s.regions.includes(p.where);
-            const cls = [s.id === state.sender ? 'sel' : '', relevant ? '' : 'dim', s.id === rec.primary ? 'rec-primary' : ''].join(' ');
+            const cls = [s.id === state.sender ? 'sel' : '', relevant ? '' : 'dim'].join(' ');
             return `
             <button class="sender ${cls}" data-s="${s.id}">
-              <div class="s-head">${s.icon} ${s.name}</div>
+              <div class="s-head">${s.icon} ${s.name}${s.id === rec.primary ? '<span class="rec-badge">Recommended</span>' : ''}</div>
               <dl>
                 <dt>Register</dt><dd>${s.reg}</dd>
                 <dt>Live in</dt><dd>${s.time}</dd>
@@ -314,19 +324,41 @@
 
       left.querySelectorAll('.picker [data-k]').forEach(b => b.addEventListener('click', () => {
         p[b.dataset.k] = b.dataset.v;
-        state.sender = recommend(p).primary;
+        state.sender = null;
         LEFT.senders();
         renderSenderDetail();
       }));
       left.querySelectorAll('[data-s]').forEach(b => b.addEventListener('click', () => {
-        state.sender = b.dataset.s;
-        left.querySelectorAll('[data-s]').forEach(x => x.classList.toggle('sel', x === b));
+        // Clicking the selected card again clears the selection.
+        state.sender = state.sender === b.dataset.s && !b.classList.contains('rec-more') ? null : b.dataset.s;
+        left.querySelectorAll('.sender[data-s]').forEach(x => x.classList.toggle('sel', x.dataset.s === state.sender));
         renderSenderDetail(true);
       }));
     },
 
     compliance() {
       const r = COMPLIANCE[state.region];
+      const isSel = (track, i) => state.step && state.step.region === state.region && state.step.track === track && state.step.i === i;
+      const card = (tr, track) => `
+        <div class="card">
+          <h3>${tr.title}</h3>
+          ${tr.guide ? `<a class="guide-link" href="${SOURCES[tr.guide].u}" ${ext}>⭐ ${SOURCES[tr.guide].t} →</a>` : ''}
+          <div class="flow">
+            ${tr.steps.map((s, k) => `
+              <button class="f-step ${s.once ? 'once' : 'per'} ${isSel(track, k) ? 'sel' : ''}" data-track="${track}" data-i="${k}">
+                <div class="f-dot">${k + 1}</div>
+                <div class="f-body"><b>${s.t}<span class="who-tag ${s.once ? 'once' : 'per'}">${s.once ? 'Once' : 'Per customer'}</span></b><span>${s.s}</span></div>
+              </button>`).join('')}
+          </div>
+        </div>`;
+      const table = (t) => t ? `
+        <div class="card">
+          <table class="mini-tbl">
+            <tr>${t.head.map(h => `<th>${h}</th>`).join('')}</tr>
+            ${t.rows.map(row => `<tr>${row.map((c, k) => `<td>${k === 0 ? `<b>${c}</b>` : c}</td>`).join('')}</tr>`).join('')}
+          </table>
+          ${t.foot ? `<p class="tbl-foot">${t.foot}</p>` : ''}
+        </div>` : '';
       left.innerHTML = `
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
@@ -336,32 +368,28 @@
             </div>
           </div>
         </div>
-        ${r.tracks.map(tr => `
-          <div class="card">
-            <h3>${tr.title}</h3>
-            ${tr.guide ? `<a class="guide-link" href="${SOURCES[tr.guide].u}" ${ext}>⭐ ${SOURCES[tr.guide].t} →</a>` : ''}
-            <div class="flow">
-              ${tr.steps.map((s, k) => `
-                <div class="f-step ${s.once ? 'once' : 'per'}">
-                  <div class="f-dot">${k + 1}</div>
-                  <div class="f-body"><b>${s.t}<span class="who-tag ${s.once ? 'once' : 'per'}">${s.once ? 'Once' : 'Per customer'}</span></b><span>${s.s}</span></div>
-                </div>`).join('')}
-            </div>
-          </div>`).join('')}
-        ${r.table ? `
-          <div class="card">
-            <table class="mini-tbl">
-              <tr>${r.table.head.map(h => `<th>${h}</th>`).join('')}</tr>
-              ${r.table.rows.map(row => `<tr>${row.map((c, k) => `<td>${k === 0 ? `<b>${c}</b>` : c}</td>`).join('')}</tr>`).join('')}
-            </table>
-          </div>` : ''}
+        ${r.brand ? `<div class="group-label"><span>1</span> Brand & profile</div>${card(r.brand, 'brand')}${table(r.table)}` : ''}
+        ${state.region === 'intl' ? '<div class="group-label"><span>1</span> Country guidelines</div><div id="country-box"></div>' : ''}
+        <div class="group-label"><span>2</span> ${state.region === 'intl' ? 'Numbers & sender IDs' : 'Campaigns & numbers'}</div>
+        ${r.tracks.map((tr, t) => card(tr, t)).join('')}
+        ${table(r.senders)}
         <div class="callout ${r.note.kind}">${r.note.html}</div>`;
       $('#region-seg', left).addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
         state.region = b.dataset.r;
-        history.replaceState(null, '', `${location.search}#compliance/${state.region}`);
+        state.step = null;
+        history.replaceState(null, '', `${location.search}#compliance${subPath('compliance')}`);
         LEFT.compliance();
+        renderStepDetail();
       });
+      left.querySelectorAll('.f-step').forEach(b => b.addEventListener('click', () => {
+        const track = b.dataset.track === 'brand' ? 'brand' : +b.dataset.track;
+        const i = +b.dataset.i;
+        state.step = isSel(track, i) ? null : { region: state.region, track, i };
+        left.querySelectorAll('.f-step').forEach(x => x.classList.toggle('sel', x === b && !!state.step));
+        renderStepDetail(true);
+      }));
+      if (state.region === 'intl') renderCountry();
     },
 
     fraud() {
@@ -444,21 +472,144 @@
     },
   };
 
+  // ─── Data files, loaded on first use ────────────────────────────────────
+  const loading = {};
+  function loadData(src) {
+    return (loading[src] ||= new Promise((resolve, reject) => {
+      const el = document.createElement('script');
+      el.src = src;
+      el.onload = resolve;
+      el.onerror = reject;
+      document.head.appendChild(el);
+    }));
+  }
+
+  // ─── Compliance: step docs + country guidelines ─────────────────────────
+  function renderStepDetail(scroll) {
+    const el = $('#step-detail');
+    if (!el) return;
+    const st = state.step;
+    const r = st && st.region === state.region && COMPLIANCE[st.region];
+    const step = r && (st.track === 'brand' ? r.brand : r.tracks[st.track]).steps[st.i];
+    el.querySelector('.rp-body').innerHTML = step ? `
+      <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:6px">${step.t}</div>
+      <p>${step.d}</p>
+      ${sourceList(step.docs)}` : '<p class="rp-hint">Click any numbered step for its docs.</p>';
+    if (scroll && step && window.matchMedia('(max-width: 900px)').matches) el.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  const flag = (cc) => cc.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
+
+  // Country list for the guideline search, built once from ISO codes.
+  let countryRows = null;
+  function countries() {
+    if (countryRows) return countryRows;
+    const names = new Intl.DisplayNames(['en'], { type: 'region' });
+    const reg = new Set(GUIDELINE_COUNTRIES.reg);
+    countryRows = GUIDELINE_COUNTRIES.sms
+      .map(cc => ({ cc, name: names.of(cc.toUpperCase()) || cc.toUpperCase(), reg: reg.has(cc) }))
+      .sort((x, y) => x.name.localeCompare(y.name));
+    return countryRows;
+  }
+
+  function renderCountry() {
+    const box = $('#country-box');
+    if (!box) return;
+    const rows = countries();
+    const c = rows.find(x => x.cc === state.country) || rows.find(x => x.cc === 'gb');
+    const base = 'https://www.twilio.com/en-us/guidelines';
+    const tips = (list) => `<ol class="read-list">${list.map(([k, d]) => `<li><b>${k}</b><span>${d}</span></li>`).join('')}</ol>`;
+    const col = (icon, title, why, href, label, list) => `
+      <section class="g-col">
+        <header>
+          <div><h4>${icon} ${title}</h4><span>${why}</span></div>
+          <a class="g-link" href="${href}" ${ext}>${label} ↗</a>
+        </header>
+        <div class="read-body"><div class="read-label">What to look for</div>${tips(list)}</div>
+      </section>`;
+    box.innerHTML = `
+      <div class="card country">
+        <div class="country-head">
+          <p class="country-why">Each country has its own rules. Twilio keeps them on one page per country. <b>Check both pages before</b> picking a sender or buying a number.</p>
+          <div class="combo">
+            <span class="combo-flag">${flag(c.cc)}</span>
+            <input id="country-q" type="text" role="combobox" aria-label="Search a country" aria-autocomplete="list"
+              aria-expanded="false" aria-controls="country-list" autocomplete="off" spellcheck="false"
+              placeholder="Search a country…" value="${esc(c.name)}" />
+            <span class="combo-caret" aria-hidden="true">▾</span>
+            <ul id="country-list" role="listbox" hidden></ul>
+          </div>
+        </div>
+        <div class="country-grid">
+          ${col('📨', 'SMS guideline', 'Which senders you can use', `${base}/${c.cc}/sms`, `${flag(c.cc)} Open`, GUIDE_TIPS.sms)}
+          ${col('📱', 'Phone number guideline', 'What a bundle needs', c.reg ? `${base}/${c.cc}/regulatory` : SOURCES.guideReg.u, c.reg ? `${flag(c.cc)} Open` : 'All countries', GUIDE_TIPS.reg)}
+        </div>
+        ${c.reg ? '' : `<div class="g-meta">No phone number guideline page for ${esc(c.name)}. Check the full list, or Console when buying.</div>`}
+      </div>`;
+    wireCountrySearch(box, rows, c);
+  }
+
+  // Type-ahead country search: name prefix matches first, then anywhere in the name, then ISO code.
+  function wireCountrySearch(box, rows, current) {
+    const input = $('#country-q', box);
+    const list = $('#country-list', box);
+    let matches = [];
+    let active = 0;
+
+    const choose = (cc) => {
+      state.country = cc;
+      history.replaceState(null, '', `${location.search}#compliance${subPath('compliance')}`);
+      renderCountry();
+    };
+    const close = () => {
+      list.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      input.value = current.name;
+    };
+    const show = (q) => {
+      q = q.trim().toLowerCase();
+      matches = !q ? rows : [
+        ...rows.filter(r => r.name.toLowerCase().startsWith(q)),
+        ...rows.filter(r => !r.name.toLowerCase().startsWith(q) && r.name.toLowerCase().includes(q)),
+        ...rows.filter(r => r.cc === q && !r.name.toLowerCase().includes(q)),
+      ];
+      active = Math.max(0, matches.findIndex(r => r.cc === current.cc && !q));
+      list.innerHTML = matches.length
+        ? matches.map((r, i) => `<li role="option" id="opt-${r.cc}" data-cc="${r.cc}" class="${i === active ? 'active' : ''}" aria-selected="${r.cc === current.cc}">${flag(r.cc)} ${esc(r.name)}</li>`).join('')
+        : '<li class="none">No country matches</li>';
+      list.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      move(0);
+    };
+    const move = (d) => {
+      if (!matches.length) return;
+      active = (active + d + matches.length) % matches.length;
+      list.querySelectorAll('[data-cc]').forEach((li, i) => li.classList.toggle('active', i === active));
+      const el = list.children[active];
+      if (el) { el.scrollIntoView({ block: 'nearest' }); input.setAttribute('aria-activedescendant', el.id); }
+    };
+
+    input.addEventListener('focus', () => { input.select(); show(''); });
+    input.addEventListener('input', () => show(input.value));
+    input.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); list.hidden ? show('') : move(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (matches[active]) choose(matches[active].cc); }
+      else if (e.key === 'Escape') { close(); input.blur(); }
+    });
+    input.addEventListener('blur', () => setTimeout(close, 120));
+    // mousedown (not click) so the choice lands before the input's blur closes the list
+    list.addEventListener('mousedown', e => {
+      const li = e.target.closest('[data-cc]');
+      if (li) { e.preventDefault(); choose(li.dataset.cc); }
+    });
+  }
+
   // ─── Error lookup ───────────────────────────────────────────────────────
   // The catalog (~2.5 MB) is loaded only when the Error lookup chapter opens.
-  let errorsLoading = null;
   function loadErrors(cb) {
     if (window.TWILIO_ERRORS) return cb();
-    if (!errorsLoading) {
-      errorsLoading = new Promise((resolve, reject) => {
-        const el = document.createElement('script');
-        el.src = 'js/errors-data.js';
-        el.onload = resolve;
-        el.onerror = reject;
-        document.head.appendChild(el);
-      });
-    }
-    errorsLoading.then(cb, () => {
+    loadData('js/errors-data.js').then(cb, () => {
       const box = $('#err-results');
       if (box) box.innerHTML = `<div class="empty-note">Couldn't load error data. Use the <a href="${SOURCES.errorDict.u}" ${ext}>official dictionary</a>.</div>`;
     });
@@ -573,11 +724,14 @@
   function renderSenderDetail(scroll) {
     const el = $('#sender-detail');
     if (!el) return;
-    const s = byId(state.sender || recommend(state.picker).primary);
-    el.querySelector('.rp-body').innerHTML = `
-      <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:6px">${s.icon} ${s.name}</div>
-      ${s.detail}
-      <div style="font-size:12.5px">Docs: ${s.src.map(id => `<a href="${SOURCES[id].u}" ${ext}>${SOURCES[id].t}</a>`).join(' · ')}</div>`;
+    const s = state.sender && byId(state.sender);
+    el.querySelector('.rp-body').innerHTML = s
+      ? `<div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:6px">${s.icon} ${s.name}</div>${s.detail}`
+      : '<p class="rp-hint">Click a sender card for details.</p>';
+    // Docs follow the selection; with nothing selected, show the chapter's general docs.
+    $('#rp-sources').innerHTML = s
+      ? sourcesBlock(s.src, ` · ${s.name}`)
+      : sourcesBlock(CHAPTERS.find(c => c.id === 'senders').sources);
     if (scroll && window.matchMedia('(max-width: 900px)').matches) el.scrollIntoView({ behavior: 'smooth' });
   }
 
